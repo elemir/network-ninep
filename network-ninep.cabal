@@ -1,0 +1,45 @@
+Name:           network-ninep
+Version:        0.0.1
+Homepage:       http://github.com/Elemir/NineP
+Synopsis:       9P2000 in pure Haskell
+Description:    Pure Haskell implementation of the 9P2000 protocol from the
+                Plan 9 and Inferno operating systems.  Many implementations of
+                9P2000 exist including the Linux kernel v9fs module, wmii 
+                (X window manager).  More information on 9P and implementations
+                may be found at http:\/\/9p.cat-v.org
+License:        BSD3
+Category:       Network
+License-file:   LICENSE
+Author:         Evgeny I. E. Omelchenko<elemir90@gmail.com>,
+                Tim Newsham <newsham@lava.net>,
+                Dave Leimbach <leimy2k@gmail.com>
+Maintainer:     Evgeny I. E. Omelchenko<elemir90@gmail.com>
+Build-Type:     Simple
+Cabal-Version:  >=1.2
+Stability:      Experimental
+Tested-With:    GHC == 7.4.1
+
+Flag bytestring-in-base
+
+Flag testing
+    default: False
+
+Library
+    if flag(bytestring-in-base)
+        Build-Depends: base >= 2.0 && < 2.2
+    else
+        Build-Depends: base < 2.0 || >= 3, bytestring >= 0.9
+
+    Build-Depends:      binary, regex-posix, network, mstate, mtl, time, containers, utf8-string
+
+    Hs-Source-Dirs:     src
+    Ghc-Options:        -O2 -Wall -Werror
+    Exposed-Modules:    Control.Monad.Launcher
+                        Network.NineP.Binary
+                        Network.NineP.Server
+                        Network.NineP.Server.Error
+                        Network.NineP.Server.File
+                        Network.NineP.Server.File.Internal
+                        Network.NineP.Server.Launcher
+                        Network.NineP.Server.Utils
+

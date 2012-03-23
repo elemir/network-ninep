@@ -1,0 +1,5 @@
+Network.NineP
+=============
+
+Pure haskell high-level implementation of 9p protocol. Particularly based on leimy2k's Data.NineP library.
+
