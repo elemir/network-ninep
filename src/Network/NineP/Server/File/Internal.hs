@@ -74,6 +74,7 @@ class CommonFile a s where
     qidVersion  :: a -> NineP s Word32
     stat        :: a -> NineP s Stat
     remove      :: a -> NineP s ()
+    parent      :: a -> NineP s (File' s)
     create      :: a -> String -> DMode -> OMode -> NineP s (File' s)
     wstat       :: a -> Stat -> NineP s ()
 

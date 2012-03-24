@@ -12,7 +12,6 @@
   * open permissions
   * create permissions
 * `Create' message must open the file
-* Add `parent' for file and implement adding '.' and '..' to file list (at stat and read requests)
 * Creating '.' and '..' is always disallowed
 * Implement don't touch values for wstat
 * Version message should reinitialize connection

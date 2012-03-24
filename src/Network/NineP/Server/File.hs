@@ -56,6 +56,7 @@ instance CommonFile a s => CommonFile (SRFWrap a) s where
     remove (SRFWrap f)     = remove f
     create (SRFWrap f)     = create f
     wstat (SRFWrap f)      = wstat f
+    parent (SRFWrap f)     = parent f
 
 instance CommonFile a s => CommonFile (SWFWrap a) s where
     qidPath (SWFWrap f)    = qidPath f
@@ -64,6 +65,7 @@ instance CommonFile a s => CommonFile (SWFWrap a) s where
     remove (SWFWrap f)     = remove f
     create (SWFWrap f)     = create f
     wstat (SWFWrap f)      = wstat f
+    parent (SWFWrap f)     = parent f
 
 instance CommonFile a s => CommonFile (DirWrap a) s where
     qidPath (DirWrap f)    = qidPath f
@@ -72,6 +74,7 @@ instance CommonFile a s => CommonFile (DirWrap a) s where
     remove (DirWrap f)     = remove f
     create (DirWrap f)     = create f
     wstat (DirWrap f)      = wstat f
+    parent (DirWrap f)     = parent f
 
 instance StreamReaderFile a s => File (SRFWrap a) s where
     type FileData (SRFWrap a) s = L.ByteString
@@ -139,10 +142,14 @@ instance Directory a s => File (DirWrap a) s where
       if (mode .&. (oWrite .|. oReadWrite .|. oTruncate) /= 0)
         then throwError ErrReadOnly
         else do
-          let modifyName name st = st { B.st_name = name }
           mp <- lookup dir
+          par' <- parent dir 
+          let modifyName name st = st { B.st_name = name }
+          let dot = (".", directory' dir)
+          let dotdot = ("..", par')
           stat' <- mapM (\(name, file) -> liftM (modifyName name) 
-                                              (binStat file)) $ M.toList mp
+                                              (binStat file)) 
+                                              $ dot : dotdot : M.toList mp
           return (runPut . (mapM_ B.put) $ stat', 0)
 
     read _ seek size = do
