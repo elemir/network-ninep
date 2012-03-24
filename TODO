@@ -11,7 +11,6 @@
   * wstat permissions
   * open permissions
   * create permissions
-* Prevent offset than read directory
 * `Create' message must open the file
 * Add `parent' for file and implement adding '.' and '..' to file list (at stat and read requests)
 * Creating '.' and '..' is always disallowed

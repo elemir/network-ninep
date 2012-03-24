@@ -35,8 +35,6 @@ import Control.Monad (replicateM)
 import Data.Char (chr, ord)
 import Data.Word (Word8, Word16, Word32, Word64)
 
---import Debug.Trace
-
 import Data.Binary.Get
     ( Get, runGet, isEmpty, remaining, skip
     , getWord8, getWord16le, getWord32le, getWord64le, getLazyByteString
@@ -240,7 +238,7 @@ instance Bin RMsgType where
                     else error $ "invalid tag: " ++ (show n)
     put = putWord8 . toEnum . (+ 101) . (* 2) . fromEnum
 
-instance (MsgBody a, Bin (MsgType a)) => (Bin (Msg a)) where
+instance (MsgBody a, Bin (MsgType a)) => Bin (Msg a) where
     get =
       do
         sz <- getWord32le
@@ -369,7 +367,7 @@ getNest sz g =
   do
     b' <- getRemainingLazyByteString
     let result = flip runGet (L.take (fromIntegral sz) b') $ getNest' g
-    skip (fromIntegral sz)
+    skip $ fromIntegral sz
     return result
 
 getListAll :: (Bin a) => Get [a]

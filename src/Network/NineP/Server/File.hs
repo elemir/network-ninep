@@ -116,11 +116,11 @@ instance StreamWriterFile a s => File (SWFWrap a) s where
 
     read _ _ _ = throwError ErrOpPerm
 
-    write _ offset buf =
+    write _ seek buf =
       do
-        (tid, chan, seek) <- get
+        (tid, chan, offset) <- get
         let len = fromIntegral $ L.length buf
-        put (tid, chan, seek + fromIntegral len)
+        put (tid, chan, offset + fromIntegral len)
         if (seek /= offset)
           then throwError ErrIllSeek 
           else do
@@ -133,7 +133,7 @@ instance StreamWriterFile a s => File (SWFWrap a) s where
                                         >> (liftIO $ killThread tid)
 
 instance Directory a s => File (DirWrap a) s where
-    type FileData (DirWrap a) s = L.ByteString
+    type FileData (DirWrap a) s = (L.ByteString, Word64)
 
     open (DirWrap dir) mode =
       if (mode .&. (oWrite .|. oReadWrite .|. oTruncate) /= 0)
@@ -143,11 +143,18 @@ instance Directory a s => File (DirWrap a) s where
           mp <- lookup dir
           stat' <- mapM (\(name, file) -> liftM (modifyName name) 
                                               (binStat file)) $ M.toList mp
-          return . runPut . (mapM_ B.put) $ stat' 
+          return (runPut . (mapM_ B.put) $ stat', 0)
 
-    read _ offset size = do
-      buf <- get
-      return $ L.take (fromIntegral size) $ L.drop (fromIntegral offset) buf
+    read _ seek size = do
+      (buf, offset) <- get
+      if (seek /= offset)
+          then throwError ErrDirOffset
+          else do
+            let buf' = L.take (fromIntegral size)
+                         $ L.drop (fromIntegral offset) buf
+            let len = fromIntegral . L.length $ buf'
+            put (buf, seek + len)
+            return buf'
 
     write _ _ _ = throwError ErrReadOnly
 
