@@ -1,21 +1,30 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module Network.NineP.Server.Utils
-    ( getQid, binStat, fromBinStat, fromBinOMode, walk
+    ( getQid, binStat, fromBinStat, fromBinOMode, walk, sendRMsg
     ) where
 
 import Prelude hiding (lookup)
 
 import Control.Monad (liftM)
+import Control.Monad.Trans (MonadIO(..))
 import Data.Bits (shiftL, complement, (.&.), (.|.))
-import Data.Word (Word8)
+import Data.Word (Word8, Word16)
+import System.IO (Handle, hFlush)
 
 import qualified Data.Map as M
 
+import Data.Binary.Put (runPut)
 import Data.Time.Clock.POSIX(utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
+
+import qualified Data.ByteString.Lazy as L
 
 import Network.NineP.Server.File.Internal
 
 import qualified Network.NineP.Binary as B
+
+sendRMsg :: MonadIO m => Handle -> Word16 -> B.RMsgBody -> m ()
+sendRMsg h tag msgBody =
+    liftIO $ L.hPutStr h (runPut $ B.put $ B.Msg tag msgBody) >> hFlush h
 
 getQid :: File a s => a -> NineP s B.Qid
 getQid file =

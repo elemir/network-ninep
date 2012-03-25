@@ -12,16 +12,15 @@ import Control.Exception (bracketOnError)
 import Control.Monad (forever)
 import Control.Monad.Error (catchError, throwError, runErrorT)
 import Control.Monad.State (runStateT)
-import Control.Monad.Trans (MonadIO(..), lift)
+import Control.Monad.Trans (lift, liftIO)
 import Data.Maybe (listToMaybe, fromMaybe)
 import Data.Word (Word16)
-import System.IO (Handle, hClose, hFlush, hIsOpen)
+import System.IO (Handle, hClose, hIsOpen)
 
 import qualified Data.Map as M
 
 import Control.Concurrent.MState (evalMState, forkM, forkM_, waitM)
 import Data.Binary.Get (runGetState)
-import Data.Binary.Put (runPut)
 import Network
   ( Socket, PortID(..), HostName
   , accept, withSocketsDo, sClose, listenOn
@@ -100,10 +99,6 @@ launchServer' serv conn =
             then sendRMsg h tag (Rerror (toString err))
             else throwError err
 
-        sendRMsg :: MonadIO m => Handle -> Word16 -> RMsgBody -> m ()
-        sendRMsg h tag msgBody =
-          liftIO $ L.hPutStr h (runPut $ B.put $ Msg tag msgBody) >> hFlush h
-
         msgLoop :: L.ByteString -> [Msg TMsgBody]
         msgLoop buf =
           let (x, buf', _) = runGetState B.get buf 0
@@ -113,14 +108,10 @@ launchServer' serv conn =
         parseLoop h (Msg tag body:xs) = do
           let parse = case body of 
                         Tversion sz ver' ->
-                          setVersion $
+                          setVersion h tag sz $
                             if ver' /= "9P2000"
-                              then do
-                                sendRMsg h tag $ Rversion sz "unknown"
-                                return Nothing
-                              else do
-                                sendRMsg h tag $ Rversion sz "9P2000"
-                                return $ Just "9P2000"
+                              then return Nothing
+                              else return $ Just "9P2000"
                         Tauth _ _ _ ->
                           throwError NoAuthRequired 
                         Tflush oldtag ->

@@ -10,6 +10,7 @@ import Control.Concurrent (ThreadId)
 import Control.Monad.Error(throwError)
 import Control.Monad.State(get, put)
 import Data.Word (Word16, Word32)
+import System.IO (Handle)
 
 import qualified Data.Map as M
 
@@ -17,6 +18,9 @@ import Control.Concurrent.MState (MState)
 
 import Network.NineP.Server.File.Internal
 import Network.NineP.Server.Error
+import Network.NineP.Server.Utils
+
+import qualified Network.NineP.Binary as B
 
 type LauncherState s
   = (Maybe String, M.Map Word32 (File' s), M.Map Word16 ThreadId)
@@ -24,13 +28,17 @@ type LauncherState s
 type Launcher s a
   = MState (LauncherState s) (NineP s) a
 
-setVersion :: Launcher s (Maybe String) -> Launcher s ()
-setVersion f =
+setVersion :: Handle -> Word16 -> Word32 
+                    -> Launcher s (Maybe String) -> Launcher s ()
+setVersion h tag sz f =
   do
-    (ver, x, y) <- get
-    if (ver /= Nothing)
-      then throwError ErrProto
-      else f >>= (\ver' -> put (ver', x, y))
+    mver <- f
+    case mver of
+      Nothing ->
+        sendRMsg h tag $ B.Rversion sz "unknown"
+      Just ver -> do
+        sendRMsg h tag $ B.Rversion sz ver
+        put (mver, M.empty, M.empty)
 
 checkVersion :: Launcher s () -> Launcher s ()
 checkVersion f =
