@@ -37,8 +37,8 @@ setVersion h tag sz f =
       Nothing ->
         sendRMsg h tag $ B.Rversion sz "unknown"
       Just ver -> do
-        sendRMsg h tag $ B.Rversion sz ver
         put (mver, M.empty, M.empty)
+        sendRMsg h tag $ B.Rversion sz ver
 
 checkVersion :: Launcher s () -> Launcher s ()
 checkVersion f =
@@ -57,10 +57,12 @@ withThreadIdDo tag f =
       Nothing -> throwError ErrProto
 
 putThreadId :: Word16 -> ThreadId -> Launcher s ()
-putThreadId tag tid = get >>= (\(x, y, mp) -> put (x, y, M.insert tag tid mp))
+putThreadId tag tid =
+  get >>= (\(x, y, mp) -> put (x, y, M.insert tag tid mp))
 
 clunkTag :: Word16 -> Launcher s ()
-clunkTag tag = get >>= (\(x, y, mp) -> put (x, y, M.delete tag mp))
+clunkTag tag =
+  get >>= (\(x, y, mp) -> put (x, y, M.delete tag mp))
 
 withFileDo :: Word32 -> (File' s -> Launcher s ()) -> Launcher s ()
 withFileDo fid f =
@@ -79,9 +81,11 @@ withoutFileDo fid f =
       Nothing -> f
 
 putFile :: Word32 -> File' s -> Launcher s ()
-putFile fid file = get >>= (\(x, mp, y) -> put (x, M.insert fid file mp, y))
+putFile fid file = 
+  get >>= (\(x, mp, y) -> put (x, M.insert fid file mp, y))
 
 clunkFile :: Word32 -> Launcher s ()
-clunkFile fid = get >>= (\(x, mp, y) -> put (x, M.delete fid mp, y))
+clunkFile fid =
+  get >>= (\(x, mp, y) -> put (x, M.delete fid mp, y))
 
 

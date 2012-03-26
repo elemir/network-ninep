@@ -128,8 +128,8 @@ launchServer' serv conn =
                               case root' of
                                 File' file _ -> do
                                   qid' <- lift $ getQid file
-                                  sendRMsg h tag $ Rattach qid'
                                   putFile fid root'
+                                  sendRMsg h tag $ Rattach qid'
                         Twalk fid newfid wnames ->
                           checkVersion $
                             withFileDo fid $
@@ -143,17 +143,23 @@ launchServer' serv conn =
                               \(File' file _) -> do
                                 d <- lift $ open file $ fromBinOMode mode
                                 qid <- lift $ getQid file
+                                putFile fid $ File' file $ Just d
                                 sendRMsg h tag $ Ropen qid 0
-                                putFile fid $ File' file (Just d)
                         Tcreate fid name perm mode ->
                           checkVersion $
                             withFileDo fid $
-                              \(File' dir _) -> do
-                                File' file _ <- lift $ create dir name 
-                                                        (fromIntegral perm)
-                                                        (fromBinOMode mode)
-                                qid <- lift $ getQid file
-                                sendRMsg h tag $ Rcreate qid 0
+                              \(File' dir _) ->
+                                if (name == "." || name == "..")
+                                   then
+                                     throwError ErrExists 
+                                   else do
+                                     perm' <- lift $ convertPerm dir perm
+                                     File' file _ <- lift $ create dir name
+                                                                  perm'
+                                     d <- lift $ open file $ fromBinOMode mode
+                                     qid <- lift $ getQid file
+                                     putFile fid $ File' file $ Just d
+                                     sendRMsg h tag $ Ropen qid 0
                         Tread fid offset count ->
                           checkVersion $
                             withFileDo fid $
@@ -163,8 +169,8 @@ launchServer' serv conn =
                                     (buf, d') <-
                                       lift $ runStateT (read 
                                                 file offset count) d
+                                    putFile fid $ File' file $ Just d'
                                     sendRMsg h tag $ Rread buf
-                                    putFile fid $ File' file (Just d')
                                   Nothing -> throwError ErrInvalArg
                         Twrite fid offset dat ->
                           checkVersion $
@@ -174,16 +180,16 @@ launchServer' serv conn =
                                   Just d -> do
                                     (count, d') <- lift $ runStateT (write
                                                             file offset dat) d
+                                    putFile fid $ File' file $ Just d'
                                     sendRMsg h tag $ Rwrite count
-                                    putFile fid $ File' file (Just d')
                                   Nothing -> throwError ErrInvalArg
                         Tclunk fid -> 
                           checkVersion $
                             withFileDo fid $
                               \(File' file d) -> do
                                 lift $ clunk file d
-                                sendRMsg h tag Rclunk
                                 clunkFile fid
+                                sendRMsg h tag Rclunk
                         Tremove fid ->
                           checkVersion $
                             withFileDo fid $
@@ -219,7 +225,6 @@ launchServer' serv conn =
         loop = do
           h <- liftIO $ cAccept conn
           forkM_ $ evalMState True (thread h) (Nothing, M.empty, M.empty)
-
      in do
          result <- runErrorT $ evalMState True (forever loop) serv
          case result of

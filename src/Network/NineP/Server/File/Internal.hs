@@ -12,7 +12,7 @@ module Network.NineP.Server.File.Internal
 import Prelude hiding (read)
 
 import Control.Monad.State(StateT(..))
-import Control.Monad.Error(ErrorT(..))
+import Control.Monad.Error(ErrorT, throwError)
 import Data.Bits(shiftL)
 import Data.Word(Word64, Word32, Word8)
 
@@ -59,7 +59,7 @@ oTruncate  = 0x10
 oRClose    = 0x40
 
 data Stat = Stat
-    { st_mode    :: !DMode
+    { st_perm    :: !DMode
     , st_atime   :: !UTCTime
     , st_mtime   :: !UTCTime
     , st_size    :: !Word64
@@ -75,13 +75,14 @@ class CommonFile a s where
     stat        :: a -> NineP s Stat
     remove      :: a -> NineP s ()
     parent      :: a -> NineP s (File' s)
-    create      :: a -> String -> DMode -> OMode -> NineP s (File' s)
     wstat       :: a -> Stat -> NineP s ()
 
 class CommonFile a s => File a s where
     type FileData a s
     lookup :: a -> NineP s (M.Map String (File' s))
     lookup _ = return M.empty
+    create  :: a -> String -> DMode -> NineP s (File' s)
+    create _ _ _ = throwError ErrFidBadUse
     open    :: a -> OMode -> NineP s (FileData a s)
     read    :: a -> Word64 -> Word32 -> NinePST (FileData a s) s L.ByteString
     write   :: a -> Word64 -> L.ByteString -> NinePST (FileData a s) s Word32

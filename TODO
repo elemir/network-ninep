@@ -11,9 +11,6 @@
 * Check and set some permissions 
   * wstat permissions
   * open permissions
-  * create permissions
-* `Create' message must open the file
-* Creating '.' and '..' is always disallowed
 * Implement don't touch values for wstat
 * IOunit implementation
 * Fid must become free after file removing

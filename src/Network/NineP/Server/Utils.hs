@@ -1,6 +1,6 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 module Network.NineP.Server.Utils
-    ( getQid, binStat, fromBinStat, fromBinOMode, walk, sendRMsg
+    ( getQid, binStat, fromBinStat, fromBinOMode, walk, sendRMsg, convertPerm
     ) where
 
 import Prelude hiding (lookup)
@@ -8,7 +8,7 @@ import Prelude hiding (lookup)
 import Control.Monad (liftM)
 import Control.Monad.Trans (MonadIO(..))
 import Data.Bits (shiftL, complement, (.&.), (.|.))
-import Data.Word (Word8, Word16)
+import Data.Word (Word8, Word16, Word32)
 import System.IO (Handle, hFlush)
 
 import qualified Data.Map as M
@@ -32,7 +32,16 @@ getQid file =
     path <- qidPath file
     ver <- qidVersion file
     stat' <- stat file
-    return $ B.Qid (fromIntegral $ (st_mode stat') `shiftL` 24) ver path
+    return $ B.Qid (fromIntegral $ (st_perm stat') `shiftL` 24) ver path
+
+convertPerm :: File a s => a -> Word32 -> NineP s DMode
+convertPerm dir perm =
+  do
+    let perm' = fromIntegral perm
+    let mask = if (perm' .&. dmDir /= 0) then 0o666 else 0o777
+    let comask = complement mask
+    stat' <- stat dir
+    return $ perm' .&. (comask .|. (st_perm stat' .&. mask))
 
 fromBinStat :: B.Stat -> Stat
 fromBinStat (B.Stat _ _ _ mode atime mtime size name uid gid muid) =
