@@ -8,11 +8,14 @@ module Control.Monad.Launcher
     ) where
 import Control.Concurrent (ThreadId)
 import Control.Monad.Error(throwError)
-import Control.Monad.State(get, put)
+import Control.Monad.State(get, put, modify)
 import Data.Word (Word16, Word32)
 import System.IO (Handle)
 
 import qualified Data.Map as M
+
+import Data.Accessor
+import Data.Accessor.Tuple
 
 import Control.Concurrent.MState (MState)
 
@@ -58,11 +61,11 @@ withThreadIdDo tag f =
 
 putThreadId :: Word16 -> ThreadId -> Launcher s ()
 putThreadId tag tid =
-  get >>= (\(x, y, mp) -> put (x, y, M.insert tag tid mp))
+  modify $ third3 ^: M.insert tag tid
 
 clunkTag :: Word16 -> Launcher s ()
 clunkTag tag =
-  get >>= (\(x, y, mp) -> put (x, y, M.delete tag mp))
+  modify $ third3 ^: M.delete tag
 
 withFileDo :: Word32 -> (File' s -> Launcher s ()) -> Launcher s ()
 withFileDo fid f =
@@ -82,10 +85,10 @@ withoutFileDo fid f =
 
 putFile :: Word32 -> File' s -> Launcher s ()
 putFile fid file = 
-  get >>= (\(x, mp, y) -> put (x, M.insert fid file mp, y))
+  modify $ second3 ^: M.insert fid file
 
 clunkFile :: Word32 -> Launcher s ()
 clunkFile fid =
-  get >>= (\(x, mp, y) -> put (x, M.delete fid mp, y))
+  modify $ second3 ^: M.delete fid
 
 
