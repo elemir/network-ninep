@@ -30,11 +30,13 @@ Library
     else
         Build-Depends: base < 2.0 || >= 3, bytestring >= 0.9
 
-    Build-Depends:      binary, regex-posix, network, mstate, mtl, time, containers, utf8-string, data-accessor
+    Build-Depends:      binary, regex-posix, network, mstate, mtl, time, containers, utf8-string, data-accessor, data-accessor-template
 
     Hs-Source-Dirs:     src
     Ghc-Options:        -O2 -Wall -Werror
     Other-Modules:      Control.Monad.Launcher
+                        Data.NineP.Mode
+                        Data.NineP.Stat
                         Network.NineP.Server.Utils
     Exposed-Modules:    Network.NineP.Binary
                         Network.NineP.Server

@@ -27,6 +27,8 @@ import Data.Binary.Put (runPut)
 
 import qualified Data.ByteString.Lazy as L
 
+import Data.NineP.Mode
+import Data.NineP.Stat
 import Network.NineP.Server.Error
 import Network.NineP.Server.File.Internal hiding (lookup, create)
 import Network.NineP.Server.Utils
@@ -36,13 +38,13 @@ import qualified Network.NineP.Server.File.Internal
 
 class CommonFile a s => Directory a s where
     lookup :: a -> NineP s (M.Map String (File' s))
-    create  :: a -> String -> DMode -> NineP s (File' s)
+    create  :: a -> String -> Permission -> NineP s (File' s)
 
 class CommonFile a s => StreamReaderFile a s where
-    content :: a -> OMode -> NineP s L.ByteString
+    content :: a -> Mode -> NineP s L.ByteString
 
 class CommonFile a s => StreamWriterFile a s where
-    hook :: a -> OMode -> NineP s (L.ByteString -> NineP s ())
+    hook :: a -> Mode -> NineP s (L.ByteString -> NineP s ())
 
 newtype SRFWrap a = SRFWrap a
 
@@ -78,7 +80,7 @@ instance StreamReaderFile a s => File (SRFWrap a) s where
     type FileData (SRFWrap a) s = L.ByteString
 
     open (SRFWrap file) mode =
-      if (mode .&. (oWrite .|. oReadWrite .|. oTruncate) /= 0)
+      if (mode .&. (mWrite .|. mReadWrite .|. mTruncate) /= 0)
         then throwError ErrReadOnly
         else content file mode
 
@@ -95,7 +97,7 @@ instance StreamWriterFile a s => File (SWFWrap a) s where
     type FileData (SWFWrap a) s = (ThreadId, Chan (Maybe L.ByteString), Word64)
 
     open (SWFWrap file) mode =
-      if (mode .&. (oRead .|. oReadWrite .|. oExec) /= 0)
+      if (mode .&. (mRead .|. mReadWrite .|. mExec) /= 0)
         then throwError ErrOpPerm
         else
           let getMaybeChanContents chan =
@@ -137,7 +139,7 @@ instance Directory a s => File (DirWrap a) s where
     type FileData (DirWrap a) s = (L.ByteString, Word64)
 
     open (DirWrap dir) mode =
-      if (mode .&. (oWrite .|. oReadWrite .|. oTruncate) /= 0)
+      if (mode .&. (mWrite .|. mReadWrite .|. mTruncate) /= 0)
         then throwError ErrReadOnly
         else do
           mp <- lookup dir
@@ -146,7 +148,7 @@ instance Directory a s => File (DirWrap a) s where
           let dot = (".", directory' dir)
           let dotdot = ("..", par')
           stat' <- mapM (\(name, file) -> liftM (modifyName name) 
-                                              (binStat file)) 
+                                              (fromStat file)) 
                                               $ dot : dotdot : M.toList mp
           return (runPut . (mapM_ B.put) $ stat', 0)
 

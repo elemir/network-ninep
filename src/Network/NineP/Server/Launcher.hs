@@ -1,8 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude, TypeFamilies, FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Network.NineP.Server.Launcher
-    ( Stat(..)
-    , Connection(..)
+    ( Connection(..)
     , Server(..), launchServer, launchServer'
     ) where
 import Prelude hiding (read, lookup)
@@ -81,7 +80,7 @@ connection :: String -> IO Socket
 connection s =
     let pat = "tcp!(.*)!([0-9]*)|unix!(.*)"
         wrongAddr = ioError $ userError $ "wrong 9p connection address: " ++ s
-        (bef, _, aft, grps) = s =~ pat :: (String,String,String,[String])
+        (bef, _, aft, grps) = s =~ pat :: (String, String, String, [String])
      in if (bef /= "" || aft /= "" || grps == [])
         then wrongAddr
         else case grps of
@@ -141,7 +140,7 @@ launchServer' serv conn =
                           checkVersion $
                             withFileDo fid $
                               \(File' file _) -> do
-                                d <- lift $ open file $ fromBinOMode mode
+                                d <- lift $ open file $ toMode mode
                                 qid <- lift $ getQid file
                                 putFile fid $ File' file $ Just d
                                 sendRMsg h tag $ Ropen qid 0
@@ -156,7 +155,7 @@ launchServer' serv conn =
                                      perm' <- lift $ convertPerm dir perm
                                      File' file _ <- lift $ create dir name
                                                                   perm'
-                                     d <- lift $ open file $ fromBinOMode mode
+                                     d <- lift $ open file $ toMode mode
                                      qid <- lift $ getQid file
                                      putFile fid $ File' file $ Just d
                                      sendRMsg h tag $ Ropen qid 0
@@ -201,14 +200,14 @@ launchServer' serv conn =
                             withFileDo fid $
                               \f@(File' file _) -> do
                                 mp <- lift $ lookup file
-                                stat' <- mapM (lift . binStat) (f : M.elems mp)
+                                stat' <- mapM (lift . fromStat) (f : M.elems mp)
                                 sendRMsg h tag $ Rstat stat'
                         Twstat fid stats ->
                           checkVersion $ 
                             withFileDo fid $
                               \(File' file _) -> do
                                 mapM_ (\st -> lift . wstat file 
-                                                  . fromBinStat $ st) stats
+                                                  . toWStat $ st) stats
                                 sendRMsg h tag Rwstat
           forkM (catchError parse $ catch' h tag) >>= 
             (\threadId -> putThreadId tag threadId 
