@@ -9,7 +9,7 @@ module Network.NineP.Server.File.Internal
 import Prelude hiding (read)
 
 import Control.Monad.State(StateT(..))
-import Control.Monad.Error(ErrorT, throwError)
+import Control.Monad.Except(ExceptT, throwError)
 import Data.Word(Word64, Word32)
 
 import qualified Data.Map as M
@@ -22,8 +22,8 @@ import Data.NineP.Mode
 import Data.NineP.Stat
 import Network.NineP.Server.Error
 
-type NineP t = MState t (ErrorT NinePError IO)
-type NinePST s t = StateT s (MState t (ErrorT NinePError IO))
+type NineP t = MState t (ExceptT NinePError IO)
+type NinePST s t = StateT s (MState t (ExceptT NinePError IO))
 
 class CommonFile a s where
     qidPath     :: a -> NineP s Word64

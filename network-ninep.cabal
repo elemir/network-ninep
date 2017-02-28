@@ -1,5 +1,5 @@
 Name:           network-ninep
-Version:        0.0.1
+Version:        0.0.2
 Homepage:       http://github.com/Elemir/NineP
 Synopsis:       9P2000 in pure Haskell
 Description:    Pure Haskell implementation of the 9P2000 protocol from the
@@ -17,7 +17,7 @@ Maintainer:     Evgeny I. E. Omelchenko<elemir90@gmail.com>
 Build-Type:     Simple
 Cabal-Version:  >=1.2
 Stability:      Experimental
-Tested-With:    GHC == 7.4.1
+Tested-With:    GHC == 7.6.3
 
 Flag bytestring-in-base
 
@@ -30,7 +30,7 @@ Library
     else
         Build-Depends: base < 2.0 || >= 3, bytestring >= 0.9
 
-    Build-Depends:      binary, regex-posix, network, mstate, mtl, time, containers, utf8-string, data-accessor, data-accessor-template
+    Build-Depends:      binary, regex-posix, network, mstate, mtl, time, containers, utf8-string, data-accessor, data-accessor-template, monad-peel >= 0.2.1.2
 
     Hs-Source-Dirs:     src
     Ghc-Options:        -O2 -Wall -Werror

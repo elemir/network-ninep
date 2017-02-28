@@ -2,6 +2,8 @@ module Network.NineP.Server
     ( module Network.NineP.Server.Error
     , module Network.NineP.Server.File
     , module Network.NineP.Server.Launcher
+    , module Data.NineP.Mode
+    , module Data.NineP.Stat
     ) where
 
 import Data.NineP.Mode

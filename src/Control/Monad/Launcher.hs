@@ -7,7 +7,7 @@ module Control.Monad.Launcher
     , withFileDo, withoutFileDo, putFile, clunkFile
     ) where
 import Control.Concurrent (ThreadId)
-import Control.Monad.Error(throwError)
+import Control.Monad.Except(throwError)
 import Control.Monad.State(get, put, modify)
 import Data.Word (Word16, Word32)
 import System.IO (Handle)

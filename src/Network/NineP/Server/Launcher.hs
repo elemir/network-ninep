@@ -9,7 +9,7 @@ import Prelude hiding (read, lookup)
 import Control.Concurrent (killThread)
 import Control.Exception (bracketOnError)
 import Control.Monad (forever)
-import Control.Monad.Error (catchError, throwError, runErrorT)
+import Control.Monad.Except (catchError, throwError, runExceptT)
 import Control.Monad.State (runStateT)
 import Control.Monad.Trans (lift, liftIO)
 import Data.Maybe (listToMaybe, fromMaybe)
@@ -27,7 +27,7 @@ import Network
 import Network.BSD (getHostByName, getProtocolNumber, hostAddress)
 import Network.Socket
   ( SocketOption(..), SockAddr(..), PortNumber(..), SocketType(..), Family(..)
-  , socket, listen, bindSocket
+  , socket, listen, bind
   , maxListenQueue, setSocketOption
   )
 import Text.Regex.Posix ((=~))
@@ -68,7 +68,7 @@ listen' hostname port = do
       (\sock -> do
 	setSocketOption sock ReuseAddr 1
         he <- getHostByName hostname
-      	bindSocket sock (SockAddrInet port (hostAddress he))
+      	bind sock (SockAddrInet port (hostAddress he))
 	listen sock maxListenQueue
 	return sock
       )
@@ -85,7 +85,7 @@ connection s =
         then wrongAddr
         else case grps of
             [addr, port, ""] ->
-              listen' addr $ PortNum $ fromMaybe 2358 $ maybeRead port
+              listen' addr $ fromMaybe (2358 :: PortNumber) $ maybeRead port
             ["", "", addr]   -> listenOn $ UnixSocket addr
             _                -> wrongAddr
 
@@ -95,7 +95,7 @@ launchServer' serv conn =
         catch' h tag err = do
           isOpen <- liftIO $ hIsOpen h
           if (isOpen)
-            then sendRMsg h tag (Rerror (toString err))
+            then sendRMsg h tag (Rerror (show err))
             else throwError err
 
         msgLoop :: L.ByteString -> [Msg TMsgBody]
@@ -225,8 +225,8 @@ launchServer' serv conn =
           h <- liftIO $ cAccept conn
           forkM_ $ evalMState True (thread h) (Nothing, M.empty, M.empty)
      in do
-         result <- runErrorT $ evalMState True (forever loop) serv
+         result <- runExceptT $ evalMState True (forever loop) serv
          case result of
-            Left err -> ioError $ userError (toString err)
+            Left err -> ioError $ userError (show err)
             Right _ -> return ()
 

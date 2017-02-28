@@ -1,31 +1,24 @@
 module Network.NineP.Server.Error
-    ( NinePError(..), toString
-    ) where
-
-import Control.Monad.Error(Error(..))
+    (NinePError(..)) where
 
 data NinePError = ErrProto | ErrRootRemove | ErrWstatProhibited | ErrNoSuchFile
                 | ErrFidInUse | ErrFidUnknown | ErrReadOnly | ErrOpPerm 
                 | ErrIllSeek | ErrDirOffset | ErrInvalArg | ErrFidBadUse
                 | ErrExists | NoAuthRequired | StrError String
 
-instance Error NinePError where
-    noMsg = undefined
-    strMsg = StrError
-
-toString :: NinePError -> String
-toString ErrProto = "Protocol error"
-toString ErrNoSuchFile = "No such file or directory"
-toString ErrFidInUse = "fid already in use"
-toString ErrFidUnknown = "fid unknown or out of range"
-toString ErrWstatProhibited = "wstat prohibited"
-toString ErrRootRemove = "cannot remove root"
-toString ErrReadOnly = "file is read only"
-toString ErrOpPerm = "Operation not permitted"
-toString ErrExists = "File exists"
-toString ErrIllSeek = "Illegal seek"
-toString ErrDirOffset = "bad offset in directory read"
-toString ErrFidBadUse = "bad use of fid"
-toString ErrInvalArg = "Invalid argument"
-toString NoAuthRequired = "u9fs authnone: no authentication required"
-toString (StrError str) = str
+instance Show NinePError where
+    show ErrProto = "Protocol error"
+    show ErrNoSuchFile = "No such file or directory"
+    show ErrFidInUse = "fid already in use"
+    show ErrFidUnknown = "fid unknown or out of range"
+    show ErrWstatProhibited = "wstat prohibited"
+    show ErrRootRemove = "cannot remove root"
+    show ErrReadOnly = "file is read only"
+    show ErrOpPerm = "Operation not permitted"
+    show ErrExists = "File exists"
+    show ErrIllSeek = "Illegal seek"
+    show ErrDirOffset = "bad offset in directory read"
+    show ErrFidBadUse = "bad use of fid"
+    show ErrInvalArg = "Invalid argument"
+    show NoAuthRequired = "u9fs authnone: no authentication required"
+    show (StrError str) = str
